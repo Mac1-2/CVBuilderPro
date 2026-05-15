@@ -1,0 +1,15 @@
+{
+    "name": "cvbuilder/app",
+    "description": "Professional CV Builder with Wizard and WYSIWYG editors",
+    "type": "project",
+    "require": {
+        "php": ">=8.2",
+        "dompdf/dompdf": "^3.0",
+        "phpoffice/phpword": "^1.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "CVBuilder\\": "src/"
+        }
+    }
+}

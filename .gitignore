@@ -1,0 +1,26 @@
+# Dependencies
+/vendor/
+composer.lock
+
+# Uploads & generated files
+/uploads/
+
+# Test files
+/test_parser.php
+/tests/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment
+.env
