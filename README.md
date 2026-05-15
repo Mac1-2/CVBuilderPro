@@ -45,6 +45,8 @@ Professional CV Builder with Wizard/WYSIWYG editors, 15 templates, PDF/Word impo
   - [Security Model](#security-model)
   - [Database Relationships](#database-relationships)
 - [Troubleshooting](#troubleshooting)
+- [Sandbox & Development Workflow](#sandbox--development-workflow)
+- [Quick Install Script](#quick-install-script)
 
 ---
 
@@ -1289,6 +1291,137 @@ composer install --no-dev --optimize-autoloader
 echo "ServerName localhost" | sudo tee /etc/apache2/conf-available/servername.conf
 sudo a2enconf servername
 sudo systemctl reload apache2
+```
+
+---
+
+## Sandbox & Development Workflow
+
+### Environment Overview
+
+The project uses a **Git + staging directory** setup for safe development:
+
+| Environment | Directory | Branch | Database | URL |
+|-------------|-----------|--------|----------|-----|
+| Production | `/var/www/html/` | `main` | `cv_builder` | `http://your-ip/` |
+| Staging | `/var/www/staging/` | `dev` | `cv_builder_staging` | `http://your-ip/staging/` |
+
+### How It Works
+
+```
+Make changes in staging → Test freely → Deploy to production
+```
+
+1. **Edit files** in `/var/www/staging/` — break things, experiment, test
+2. **Commit** changes: `git add . && git commit -m "description"`
+3. **Deploy to staging**: `./deploy.sh deploy staging`
+4. **Verify** at `http://your-ip/staging/`
+5. **Deploy to production**: `./deploy.sh deploy production`
+
+### Deploy Script
+
+Located at `/var/www/deploy.sh`:
+
+```bash
+# Check status of both environments
+./deploy.sh status
+
+# Deploy dev branch to staging
+./deploy.sh deploy staging
+
+# Deploy main branch to production
+./deploy.sh deploy production
+
+# Preview changes without applying
+./deploy.sh deploy staging --dry-run
+./deploy.sh deploy production --dry-run
+
+# Rollback to previous deployment
+./deploy.sh rollback staging
+./deploy.sh rollback production
+```
+
+### Typical Workflow
+
+```bash
+# 1. Make changes in staging
+cd /var/www/staging
+# ... edit files, test, break things ...
+
+# 2. Commit changes
+git add .
+git commit -m "Add new feature X"
+
+# 3. Deploy to staging for final check
+/var/www/deploy.sh deploy staging
+
+# 4. Test at http://your-ip/staging/
+# ... verify everything works ...
+
+# 5. Merge to main branch (from production repo)
+cd /var/www/html
+git merge dev  # or cherry-pick specific commits
+
+# 6. Deploy to production
+/var/www/deploy.sh deploy production
+```
+
+### Database Isolation
+
+- **Production DB** (`cv_builder`): Live user data, real CVs
+- **Staging DB** (`cv_builder_staging`): Fresh seed data (15 templates, 1000 phrases, 20 industries)
+- Changes in staging **never** affect production data
+- To sync production data to staging: `mysqldump cv_builder | mysql cv_builder_staging`
+
+### .gitignore
+
+The following are excluded from version control:
+
+```
+/vendor/           # Composer dependencies (reinstalled on deploy)
+/uploads/          # User uploads (PDFs, Word docs, images)
+/test_parser.php   # Test scripts
+/tests/            # Test files
+*.log              # Log files
+.env               # Environment secrets
+```
+
+### Adding New Dependencies
+
+```bash
+# In staging
+cd /var/www/staging
+composer require vendor/package
+
+# Commit the updated composer.json (not vendor/)
+git add composer.json composer.lock
+git commit -m "Add vendor/package"
+
+# Deploy
+/var/www/deploy.sh deploy staging
+# Test...
+/var/www/deploy.sh deploy production
+```
+
+### Rollback Strategy
+
+Each deployment saves the previous commit hash in `.prev_commit`. The rollback command resets to that commit:
+
+```bash
+# Something broke in production?
+./deploy.sh rollback production
+
+# Check what's deployed
+./deploy.sh status
+```
+
+For deeper rollbacks, use Git directly:
+
+```bash
+cd /var/www/html
+git log --oneline -10          # Find the commit to rollback to
+git reset --hard <commit-hash> # Rollback
+/var/www/deploy.sh deploy production  # Re-deploy
 ```
 
 ---
