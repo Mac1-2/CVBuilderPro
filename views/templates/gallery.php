@@ -27,7 +27,7 @@
             <div style="display:flex;align-items:center;justify-content:space-between;">
                 <div>
                     <div style="font-weight:600;font-size:16px;"><?= e($template['name']) ?></div>
-                    <div style="font-size:12px;color:var(--gray-500);"><?= e($template['description']) ?></div>
+                    <div style="font-size:12px;color:var(--gray-500);"><?= e($template['description'] ?? '') ?></div>
                 </div>
                 <span class="badge badge-primary"><?= e($template['category']) ?></span>
             </div>
